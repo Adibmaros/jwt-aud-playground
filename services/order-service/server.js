@@ -124,6 +124,8 @@ app.get('/api/orders', requireOrderToken, (req, res) => {
     user: {
       userId: req.user.sub,
       username: req.user.username,
+      email: req.user.email,
+      role: req.user.role,
       tokenClaims: {
         iss: req.user.iss,
         aud: req.user.aud,

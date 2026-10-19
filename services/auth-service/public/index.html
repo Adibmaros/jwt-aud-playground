@@ -534,6 +534,34 @@
           </button>
         </div>
 
+        <div class="section-label" style="margin-bottom: 8px;">👤 Data Subjek / Profil (Dinamis):</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Username</label>
+            <input type="text" id="inputUsername" value="budi_santoso" placeholder="budi_santoso">
+          </div>
+          <div class="field">
+            <label>Role</label>
+            <select id="inputRole">
+              <option value="member">member</option>
+              <option value="admin">admin</option>
+              <option value="manager">manager</option>
+              <option value="guest">guest</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>User ID (sub)</label>
+            <input type="text" id="inputSub" value="usr_10293847" placeholder="usr_10293847">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="inputEmail" value="budi_santoso@example.com" placeholder="budi@example.com">
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top: 10px; margin-bottom: 8px;">🎯 Target Service & Validitas:</div>
         <div class="field-row">
           <div class="field">
             <label>Target Audience (aud)</label>
@@ -646,6 +674,21 @@
     const activeScenarioTitle = document.getElementById('activeScenarioTitle');
     const activeScenarioDesc = document.getElementById('activeScenarioDesc');
     const btnRunScenario = document.getElementById('btnRunScenario');
+
+    const inputUsername = document.getElementById('inputUsername');
+    const inputRole = document.getElementById('inputRole');
+    const inputSub = document.getElementById('inputSub');
+    const inputEmail = document.getElementById('inputEmail');
+
+    // Auto-sync email saat username diketik (kecuali user mengedit email sendiri)
+    let emailEditedManually = false;
+    inputEmail.addEventListener('input', () => { emailEditedManually = true; });
+    inputUsername.addEventListener('input', () => {
+      if (!emailEditedManually) {
+        const clean = inputUsername.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+        inputEmail.value = clean ? `${clean}@example.com` : '';
+      }
+    });
 
     const selAudience = document.getElementById('selAudience');
     const selExpires = document.getElementById('selExpires');
@@ -843,7 +886,10 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: 'budi_santoso',
+            sub: inputSub.value.trim(),
+            username: inputUsername.value.trim() || 'budi_santoso',
+            email: inputEmail.value.trim(),
+            role: inputRole.value,
             audience: audPayload,
             expiresIn: expVal
           })

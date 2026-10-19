@@ -41,18 +41,24 @@ app.get('/health', (req, res) => {
 app.post('/api/auth/token', async (req, res) => {
   try {
     const {
+      sub,
       username = 'budi_santoso',
+      email,
+      role = 'member',
       audience = 'user-service',
       expiresIn = '1h',
-      issuer = JWT_ISSUER,
-      role = 'member'
+      issuer = JWT_ISSUER
     } = req.body;
 
+    // Nilai dinamis: gunakan nilai yang dikirim dari client atau fallback cerdas
+    const userId = sub && sub.trim() ? sub.trim() : `usr_${Date.now().toString(36)}`;
+    const userEmail = email && email.trim() ? email.trim() : `${username.toLowerCase().replace(/[^a-z0-9]/g, '_')}@example.com`;
+
     const builder = new jose.SignJWT({
-      sub: 'usr_10293847',
+      sub: userId,
       username,
       role,
-      email: `${username}@example.com`
+      email: userEmail
     })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setIssuer(issuer)
