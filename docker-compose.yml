@@ -1,0 +1,43 @@
+services:
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - JWT_SECRET=rahasia-kunci-jwt-super-aman-dan-panjang-banget-32char
+      - JWT_ISSUER=auth-service
+    volumes:
+      - ./services/auth-service/public:/app/public:ro
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - JWT_SECRET=rahasia-kunci-jwt-super-aman-dan-panjang-banget-32char
+      - JWT_ISSUER=auth-service
+      - EXPECTED_AUDIENCE=user-service
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - JWT_SECRET=rahasia-kunci-jwt-super-aman-dan-panjang-banget-32char
+      - JWT_ISSUER=auth-service
+      - EXPECTED_AUDIENCE=order-service
+    restart: unless-stopped

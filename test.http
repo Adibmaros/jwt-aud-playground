@@ -1,0 +1,70 @@
+### ===================================================================
+### EKSPERIMEN JWT AUDIENCE (aud) PADA MICROSERVICES
+### ===================================================================
+
+@authService = http://localhost:3001
+@userService = http://localhost:3002
+@orderService = http://localhost:3003
+
+### 1. Periksa Health Status Masing-Masing Service
+GET {{authService}}/health
+
+###
+GET {{userService}}/health
+
+###
+GET {{orderService}}/health
+
+
+### ===================================================================
+### SKENARIO 1: Token untuk USER-SERVICE
+### ===================================================================
+
+### 2. Dapatkan Token khusus untuk [user-service] dari Auth Service
+# @name issueUserToken
+POST {{authService}}/api/auth/token
+Content-Type: application/json
+
+{
+  "username": "budi_santoso",
+  "audience": "user-service"
+}
+
+### Simpan token dari response di atas ke variabel
+@userToken = {{issueUserToken.response.body.token}}
+
+### 3. Gunakan Token user-service ke USER-SERVICE (Ekspektasi: 200 OK ✅)
+GET {{userService}}/api/users/profile
+Authorization: Bearer {{userToken}}
+
+### 4. Coba gunakan Token user-service ke ORDER-SERVICE (Ekspektasi: 403 FORBIDDEN ❌)
+### Membuktikan bahwa signature valid tapi aud="user-service" ditolak oleh order-service!
+GET {{orderService}}/api/orders
+Authorization: Bearer {{userToken}}
+
+
+### ===================================================================
+### SKENARIO 2: Token untuk ORDER-SERVICE
+### ===================================================================
+
+### 5. Dapatkan Token khusus untuk [order-service] dari Auth Service
+# @name issueOrderToken
+POST {{authService}}/api/auth/token
+Content-Type: application/json
+
+{
+  "username": "budi_santoso",
+  "audience": "order-service"
+}
+
+### Simpan token dari response di atas ke variabel
+@orderToken = {{issueOrderToken.response.body.token}}
+
+### 6. Gunakan Token order-service ke ORDER-SERVICE (Ekspektasi: 200 OK ✅)
+GET {{orderService}}/api/orders
+Authorization: Bearer {{orderToken}}
+
+### 7. Coba gunakan Token order-service ke USER-SERVICE (Ekspektasi: 403 FORBIDDEN ❌)
+### Membuktikan bahwa signature valid tapi aud="order-service" ditolak oleh user-service!
+GET {{userService}}/api/users/profile
+Authorization: Bearer {{orderToken}}

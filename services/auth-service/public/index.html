@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JWT Microservices Security Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover: rgba(255, 255, 255, 0.12);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --cyan: #06b6d4;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation */
+    nav {
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+    }
+    .brand-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-weight: 600;
+    }
+    .host-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+    .host-control input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      width: 130px;
+      outline: none;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Scenarios Quick-Selector */
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .scenario-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+    }
+    .scenario-card:hover {
+      border-color: var(--card-hover);
+      transform: translateY(-1px);
+    }
+    .scenario-card.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.08);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+    .scenario-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .scenario-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+    .badge-200 { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .badge-403 { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+    .badge-401 { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+    /* Active Scenario Banner */
+    .active-banner {
+      background: rgba(99, 102, 241, 0.06);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .banner-text h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .banner-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .banner-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Main Workspace Layout */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    @media (min-width: 1024px) {
+      .workspace {
+        grid-template-columns: 480px 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+    .btn-outline {
+      background: transparent;
+      border-color: var(--card-border);
+      color: var(--text);
+    }
+    .btn-outline:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--card-hover);
+    }
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    .btn-tamper {
+      background: rgba(244, 63, 94, 0.12);
+      border-color: rgba(244, 63, 94, 0.3);
+      color: #fb7185;
+    }
+    .btn-tamper:hover:not(:disabled) {
+      background: rgba(244, 63, 94, 0.2);
+    }
+
+    /* Token Visual Segment */
+    .jwt-visual {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+    }
+    .jwt-part {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .jwt-header { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+    .jwt-payload { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; }
+    .jwt-sig { background: rgba(6, 182, 212, 0.15); color: #67e8f9; }
+
+    /* Token Textarea */
+    .token-input {
+      width: 100%;
+      height: 90px;
+      background: #060911;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px;
+      color: #a5b4fc;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.4;
+      resize: vertical;
+      outline: none;
+      transition: border 0.15s ease;
+    }
+    .token-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Form Fields */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .field select, .field input {
+      background: #060911;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+    }
+    .field select:focus, .field input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Decoded Viewer */
+    .decoded-box {
+      background: #060911;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #e2e8f0;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+    .decoded-box .key { color: #93c5fd; }
+    .decoded-box .str { color: #86efac; }
+    .decoded-box .num { color: #fbbf24; }
+    .decoded-box .highlight {
+      background: rgba(245, 158, 11, 0.25);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 1px 4px;
+      border-radius: 4px;
+      color: #fde68a;
+      font-weight: 700;
+    }
+
+    /* Testing Stations Side-by-Side */
+    .target-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 640px) {
+      .target-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .target-card {
+      background: #0c121e;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .target-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .target-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .target-port {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+    .target-rule {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    /* Response / Verdict Box */
+    .verdict-box {
+      background: #060911;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .verdict-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      align-self: flex-start;
+      font-family: var(--font-mono);
+    }
+    .v-200 { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .v-403 { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .v-401 { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .verdict-msg {
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+    .verdict-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    details.raw-json {
+      margin-top: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+    details.raw-json summary {
+      cursor: pointer;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    details.raw-json pre {
+      background: #04060a;
+      padding: 8px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 140px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <nav>
+    <div class="nav-inner">
+      <div class="brand">
+        <span>🔐 JWT Microservices Lab</span>
+        <span class="brand-badge">RFC 7519 'aud' Claim Experiment</span>
+      </div>
+      <div class="host-control">
+        <span>🌐 Target Host:</span>
+        <input type="text" id="targetHostInput" value="" placeholder="192.168.54.202">
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Scenario Quick Bar -->
+    <div class="section-label">⚡ Pilih Skenario Pembelajaran (1-Click Presets)</div>
+    <div class="scenario-grid" id="scenarioGrid">
+      <!-- Generated via JS -->
+    </div>
+
+    <!-- Active Scenario Description Banner -->
+    <div class="active-banner" id="activeBanner">
+      <div class="banner-text">
+        <h3 id="activeScenarioTitle">Pilih skenario di atas</h3>
+        <p id="activeScenarioDesc">Klik salah satu skenario untuk memuat konfigurasi dan melihat pembuktiannya.</p>
+      </div>
+      <div class="banner-actions">
+        <button class="btn btn-primary" id="btnRunScenario">
+          ⚡ Jalankan Skenario Ini ke Kedua Service
+        </button>
+      </div>
+    </div>
+
+    <!-- Workspace -->
+    <div class="workspace">
+
+      <!-- Left Panel: Token Studio -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>⚙️ Token Studio</span>
+          </div>
+          <button class="btn btn-outline btn-sm" id="btnCopy">
+            📋 Salin Token
+          </button>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Target Audience (aud)</label>
+            <select id="selAudience">
+              <option value="user-service">user-service</option>
+              <option value="order-service">order-service</option>
+              <option value="multi">["user-service", "order-service"]</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Expiration (exp)</label>
+            <select id="selExpires">
+              <option value="1h">1 Jam (Valid)</option>
+              <option value="expired">Sudah Basi (Expired)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <button class="btn btn-primary btn-sm" id="btnGenerateToken" style="flex: 1;">
+            ✨ Terbitkan Token
+          </button>
+          <button class="btn btn-tamper btn-sm" id="btnTamperToken" title="Manipulasi payload aud tanpa mengganti signature">
+            💀 Bajak aud
+          </button>
+        </div>
+
+        <div class="section-label" style="margin-top: 10px;">Token JWT (Encoded - Bisa Diedit Bebas):</div>
+        <div class="jwt-visual">
+          <span class="jwt-part jwt-header">Header</span> .
+          <span class="jwt-part jwt-payload">Payload</span> .
+          <span class="jwt-part jwt-sig">Signature</span>
+        </div>
+        <textarea class="token-input" id="tokenTextarea" placeholder="Token akan muncul di sini..."></textarea>
+
+        <div class="section-label" style="margin-top: 14px;">Decoded Payload:</div>
+        <div class="decoded-box" id="decodedViewer">
+          <span style="color: var(--text-muted);">Memuat payload...</span>
+        </div>
+      </div>
+
+      <!-- Right Panel: Microservices Execution Stations -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>🚀 Eksekusi ke Microservices</span>
+          </div>
+          <span style="font-size: 11px; color: var(--text-muted);">Verifikasi signature & claim aud</span>
+        </div>
+
+        <div class="target-grid">
+          <!-- Station 1: User Service -->
+          <div class="target-card">
+            <div class="target-header">
+              <span class="target-name">👤 User Service</span>
+              <span class="target-port">:3002</span>
+            </div>
+            <div class="target-rule">Syarat: Signature Sah & <strong>aud: "user-service"</strong></div>
+            <button class="btn btn-outline" id="btnTestUser">
+              Kirim ke User Service
+            </button>
+            <div class="verdict-box" id="verdictUser">
+              <span style="color: var(--text-muted); text-align: center;">Belum ada request dikirim</span>
+            </div>
+          </div>
+
+          <!-- Station 2: Order Service -->
+          <div class="target-card">
+            <div class="target-header">
+              <span class="target-name">📦 Order Service</span>
+              <span class="target-port">:3003</span>
+            </div>
+            <div class="target-rule">Syarat: Signature Sah & <strong>aud: "order-service"</strong></div>
+            <button class="btn btn-outline" id="btnTestOrder">
+              Kirim ke Order Service
+            </button>
+            <div class="verdict-box" id="verdictOrder">
+              <span style="color: var(--text-muted); text-align: center;">Belum ada request dikirim</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Educational Note -->
+        <div style="margin-top: 16px; padding: 12px; background: rgba(0,0,0,0.25); border-radius: 8px; border: 1px solid var(--card-border); font-size: 12px; color: var(--text-muted);">
+          <strong style="color: var(--text);">💡 Inti Pelajaran:</strong><br>
+          • <strong>Status 200 OK:</strong> Signature valid dan claim <code style="color:#a5b4fc">aud</code> cocok dengan service penerima.<br>
+          • <strong>Status 403 Forbidden:</strong> Token asli & signature valid 100%, tapi ditolak karena <code style="color:#fde68a">aud</code> ditujukan untuk service lain.<br>
+          • <strong>Status 401 Unauthorized:</strong> Signature rusak (diedit tanpa secret key), token kedaluwarsa, atau tanpa token.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Configuration
+    const targetHostInput = document.getElementById('targetHostInput');
+    targetHostInput.value = window.location.hostname || 'localhost';
+
+    function getHost() {
+      return targetHostInput.value.trim() || window.location.hostname || 'localhost';
+    }
+
+    let currentToken = '';
+
+    // Elements
+    const scenarioGrid = document.getElementById('scenarioGrid');
+    const activeScenarioTitle = document.getElementById('activeScenarioTitle');
+    const activeScenarioDesc = document.getElementById('activeScenarioDesc');
+    const btnRunScenario = document.getElementById('btnRunScenario');
+
+    const selAudience = document.getElementById('selAudience');
+    const selExpires = document.getElementById('selExpires');
+    const btnGenerateToken = document.getElementById('btnGenerateToken');
+    const btnTamperToken = document.getElementById('btnTamperToken');
+    const btnCopy = document.getElementById('btnCopy');
+    const tokenTextarea = document.getElementById('tokenTextarea');
+    const decodedViewer = document.getElementById('decodedViewer');
+
+    const btnTestUser = document.getElementById('btnTestUser');
+    const btnTestOrder = document.getElementById('btnTestOrder');
+    const verdictUser = document.getElementById('verdictUser');
+    const verdictOrder = document.getElementById('verdictOrder');
+    const toast = document.getElementById('toast');
+
+    // 8 Rich Educational Scenarios
+    const scenarios = [
+      {
+        id: 'user_legit',
+        title: '1. Akses Sah User Service',
+        expected: '200 OK',
+        badgeClass: 'badge-200',
+        desc: 'Token diterbitkan khusus untuk user-service. Kirim ke User Service.',
+        audience: 'user-service',
+        expires: '1h',
+        autoTamper: false,
+        noToken: false,
+        explanation: 'Ekspektasi: User Service menerima token (200 OK) karena signature sah & aud cocok.'
+      },
+      {
+        id: 'order_legit',
+        title: '2. Akses Sah Order Service',
+        expected: '200 OK',
+        badgeClass: 'badge-200',
+        desc: 'Token diterbitkan khusus untuk order-service. Kirim ke Order Service.',
+        audience: 'order-service',
+        expires: '1h',
+        autoTamper: false,
+        noToken: false,
+        explanation: 'Ekspektasi: Order Service menerima token (200 OK) karena signature sah & aud cocok.'
+      },
+      {
+        id: 'confused_deputy',
+        title: '3. Audience Mismatch',
+        expected: '403 Forbidden',
+        badgeClass: 'badge-403',
+        desc: 'Token sah user-service coba dipakai belanja di order-service.',
+        audience: 'user-service',
+        expires: '1h',
+        autoTamper: false,
+        noToken: false,
+        explanation: 'Ekspektasi: Order Service MENOLAK (403 Forbidden). Signature token 100% sah dari Auth Service, tapi aud tidak sesuai.'
+      },
+      {
+        id: 'tampered_signature',
+        title: '4. Manipulasi Token (Tampered)',
+        expected: '401 Invalid Sig',
+        badgeClass: 'badge-401',
+        desc: 'Client iseng mengubah payload aud sendiri tanpa tahu Secret Key.',
+        audience: 'user-service',
+        expires: '1h',
+        autoTamper: true,
+        noToken: false,
+        explanation: 'Ekspektasi: Service MENOLAK (401 Unauthorized). Kriptografi mendeteksi isi token telah diubah tanpa secret key.'
+      },
+      {
+        id: 'expired_token',
+        title: '5. Token Kedaluwarsa (Expired)',
+        expected: '401 Expired',
+        badgeClass: 'badge-401',
+        desc: 'Token dengan timestamp kedaluwarsa lampau (sudah basi).',
+        audience: 'user-service',
+        expires: 'expired',
+        autoTamper: false,
+        noToken: false,
+        explanation: 'Ekspektasi: Service MENOLAK (401 Unauthorized - TOKEN_EXPIRED) karena batas waktu exp sudah terlewati.'
+      },
+      {
+        id: 'multi_audience',
+        title: '6. Multi-Audience Array',
+        expected: '200 di Keduanya',
+        badgeClass: 'badge-200',
+        desc: 'Token resmi dengan aud: ["user-service", "order-service"] (RFC 7519).',
+        audience: 'multi',
+        expires: '1h',
+        autoTamper: false,
+        noToken: false,
+        explanation: 'Ekspektasi: KEDUA service menerima token ini (200 OK) karena keduanya tercantum di daftar aud.'
+      },
+      {
+        id: 'no_token',
+        title: '7. Request Tanpa Token',
+        expected: '401 Missing',
+        badgeClass: 'badge-401',
+        desc: 'Memanggil API tanpa menyertakan Header Authorization Bearer.',
+        audience: 'user-service',
+        expires: '1h',
+        autoTamper: false,
+        noToken: true,
+        explanation: 'Ekspektasi: Service MENOLAK (401 Unauthorized - TOKEN_MISSING) karena token wajib disertakan.'
+      }
+    ];
+
+    let activeScenario = scenarios[0];
+
+    // Render Scenario Selector Cards
+    function renderScenarioGrid() {
+      scenarioGrid.innerHTML = scenarios.map(s => `
+        <div class="scenario-card ${s.id === activeScenario.id ? 'active' : ''}" onclick="selectScenario('${s.id}')">
+          <div class="scenario-title">
+            <span>${s.title}</span>
+            <span class="badge ${s.badgeClass}">${s.expected}</span>
+          </div>
+          <div class="scenario-desc">${s.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    window.selectScenario = async function(id) {
+      activeScenario = scenarios.find(s => s.id === id);
+      renderScenarioGrid();
+      activeScenarioTitle.innerText = activeScenario.title;
+      activeScenarioDesc.innerText = activeScenario.explanation;
+
+      // Apply to UI fields
+      selAudience.value = activeScenario.audience;
+      selExpires.value = activeScenario.expires;
+
+      if (activeScenario.noToken) {
+        currentToken = '';
+        tokenTextarea.value = '';
+        decodedViewer.innerHTML = '<span style="color:var(--amber);">[Simulasi]: Tidak ada token yang dikirim (Authorization Header kosong).</span>';
+        showToast('Skenario Tanpa Token dimuat. Klik tombol Jalankan untuk menguji.');
+        return;
+      }
+
+      await generateToken(activeScenario.audience, activeScenario.expires);
+
+      if (activeScenario.autoTamper) {
+        tamperToken();
+      }
+    };
+
+    // Helper: Toast notification
+    function showToast(msg) {
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+
+    // Helper: Parse JWT
+    function parseJwt(token) {
+      try {
+        const parts = token.split('.');
+        if (parts.length < 2) return null;
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const jsonStr = decodeURIComponent(escape(atob(base64)));
+        return JSON.parse(jsonStr);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function renderDecoded(payload) {
+      if (!payload) {
+        decodedViewer.innerHTML = '<span style="color:#fb7185">Format token tidak valid.</span>';
+        return;
+      }
+      let html = '{\n';
+      for (const [k, v] of Object.entries(payload)) {
+        if (k === 'aud') {
+          html += `  <span class="key">"${k}"</span>: <span class="highlight">${JSON.stringify(v)}</span>,\n`;
+        } else if (k === 'exp') {
+          const dateStr = new Date(v * 1000).toLocaleTimeString();
+          html += `  <span class="key">"${k}"</span>: <span class="num">${v}</span> <span style="color:#64748b">// ${dateStr}</span>,\n`;
+        } else if (typeof v === 'string') {
+          html += `  <span class="key">"${k}"</span>: <span class="str">"${v}"</span>,\n`;
+        } else {
+          html += `  <span class="key">"${k}"</span>: <span class="num">${JSON.stringify(v)}</span>,\n`;
+        }
+      }
+      html += '}';
+      decodedViewer.innerHTML = html;
+    }
+
+    // Generate Token from API
+    async function generateToken(targetAudience = selAudience.value, expVal = selExpires.value) {
+      btnGenerateToken.disabled = true;
+      btnGenerateToken.innerText = 'Membuat...';
+      try {
+        const host = getHost();
+        let audPayload = targetAudience === 'multi' ? ['user-service', 'order-service'] : targetAudience;
+
+        const res = await fetch(`http://${host}:3001/api/auth/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: 'budi_santoso',
+            audience: audPayload,
+            expiresIn: expVal
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          currentToken = data.token;
+          tokenTextarea.value = data.token;
+          renderDecoded(data.decoded.payload);
+          showToast(`Token diterbitkan untuk [${JSON.stringify(audPayload)}]`);
+        }
+      } catch (err) {
+        alert('Gagal menghubungi Auth Service di port 3001: ' + err.message);
+      } finally {
+        btnGenerateToken.disabled = false;
+        btnGenerateToken.innerText = '✨ Terbitkan Token';
+      }
+    }
+
+    // Tamper token payload (keep old signature)
+    function tamperToken() {
+      if (!currentToken) return alert('Belum ada token!');
+      try {
+        const parts = currentToken.split('.');
+        if (parts.length !== 3) return alert('Format token tidak valid');
+
+        const payload = parseJwt(currentToken);
+        if (!payload) return;
+
+        // Ubah aud tanpa update signature
+        payload.aud = payload.aud === 'order-service' ? 'user-service' : 'order-service';
+
+        const encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+
+        // Signature parts[2] TETAP LAMA!
+        currentToken = `${parts[0]}.${encodedPayload}.${parts[2]}`;
+        tokenTextarea.value = currentToken;
+        renderDecoded(payload);
+        showToast('Token dibajak: payload diubah, signature tetap lama!');
+      } catch (e) {
+        alert('Gagal membajak token: ' + e.message);
+      }
+    }
+
+    // Send Request to Service
+    async function sendRequest(serviceType) {
+      const isUser = serviceType === 'user';
+      const port = isUser ? '3002' : '3003';
+      const endpoint = isUser ? '/api/users/profile' : '/api/orders';
+      const container = isUser ? verdictUser : verdictOrder;
+      const host = getHost();
+
+      container.innerHTML = '<span style="color:var(--text-muted)">Mengirim request...</span>';
+
+      try {
+        const headers = {};
+        if (currentToken) {
+          headers['Authorization'] = `Bearer ${currentToken}`;
+        }
+
+        const response = await fetch(`http://${host}:${port}${endpoint}`, {
+          method: 'GET',
+          headers
+        });
+
+        const json = await response.json();
+        renderVerdict(container, response.status, json, serviceType);
+      } catch (err) {
+        container.innerHTML = `<span style="color:#fb7185">Gagal terhubung ke port ${port}: ${err.message}. Pastikan container aktif!</span>`;
+      }
+    }
+
+    function renderVerdict(container, status, json, serviceType) {
+      let badgeClass = 'v-200';
+      let title = `HTTP ${status} OK`;
+      let note = 'Signature asli dan claim aud cocok!';
+
+      if (status === 403) {
+        badgeClass = 'v-403';
+        title = `HTTP 403 FORBIDDEN (AUDIENCE MISMATCH)`;
+        note = `Signature token VALID (asli dari Auth Service), tetapi ditolak karena claim aud=${JSON.stringify(json.tokenAudience)} bukan untuk service ini.`;
+      } else if (status === 401) {
+        badgeClass = 'v-401';
+        title = `HTTP 401 UNAUTHORIZED`;
+        if (json.error === 'INVALID_SIGNATURE') {
+          note = 'Signature kriptografi RUSAK/PALSU! Client mencoba mengubah isi payload tanpa Secret Key.';
+        } else if (json.error === 'TOKEN_EXPIRED') {
+          note = 'Token sudah KEDALUWARSA (expired) berdasarkan claim exp.';
+        } else if (json.error === 'TOKEN_MISSING') {
+          note = 'Header Authorization Bearer tidak disertakan.';
+        } else {
+          note = json.message || 'Akses ditolak.';
+        }
+      }
+
+      container.innerHTML = `
+        <div class="verdict-status ${badgeClass}">${title}</div>
+        <div class="verdict-msg">${json.message || note}</div>
+        <div class="verdict-meta">💡 ${note}</div>
+        <details class="raw-json">
+          <summary>🔍 Raw JSON Response</summary>
+          <pre>${JSON.stringify(json, null, 2)}</pre>
+        </details>
+      `;
+    }
+
+    // Run Both Services at Once
+    async function runBothServices() {
+      await Promise.all([
+        sendRequest('user'),
+        sendRequest('order')
+      ]);
+    }
+
+    // Event Listeners
+    btnGenerateToken.addEventListener('click', () => generateToken());
+    btnTamperToken.addEventListener('click', tamperToken);
+
+    tokenTextarea.addEventListener('input', () => {
+      currentToken = tokenTextarea.value.trim();
+      const p = parseJwt(currentToken);
+      renderDecoded(p);
+    });
+
+    btnCopy.addEventListener('click', async () => {
+      if (!currentToken) return alert('Belum ada token!');
+      await navigator.clipboard.writeText(currentToken);
+      showToast('Token disalin ke clipboard!');
+    });
+
+    btnTestUser.addEventListener('click', () => sendRequest('user'));
+    btnTestOrder.addEventListener('click', () => sendRequest('order'));
+    btnRunScenario.addEventListener('click', runBothServices);
+
+    // Initial Load
+    renderScenarioGrid();
+    selectScenario('user_legit');
+  </script>
+</body>
+</html>

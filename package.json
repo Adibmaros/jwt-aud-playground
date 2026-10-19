@@ -1,0 +1,20 @@
+{
+  "name": "belajar-jwt",
+  "version": "1.0.0",
+  "description": "Eksperimen Microservices JWT Claim Audience (aud)",
+  "main": "test.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test.js",
+    "start:auth": "node services/auth-service/server.js",
+    "start:user": "node services/user-service/server.js",
+    "start:order": "node services/order-service/server.js"
+  },
+  "keywords": ["jwt", "audience", "microservices", "podman", "docker"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "jose": "^6.2.12"
+  }
+}
